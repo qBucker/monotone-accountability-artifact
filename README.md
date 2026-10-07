@@ -11,7 +11,21 @@ review; no network access is required.
 - `cusum_mc.py` — the simulation (~55 lines; Python 3 + NumPy only).
 - `expected_output.txt` — reference output produced with the fixed seed.
 - `verify.py` — compares a fresh run against the reference, cell by cell.
-- `SHA256SUMS` — checksums of the files above.
+- `SHA256SUMS` — checksums of the root files.
+- `engineering-source/` — the full engineering repository as mirrored for
+  review: the Rust crate (`src/`, `examples/`, `benches/`), evaluation
+  scripts (`scripts/`), raw measurement logs with their own
+  `measurements/raw/SHA256SUMS`, and the post-quantum shell tree
+  (`rsep-pq-shell/`). Own checksum manifest at
+  `engineering-source/SHA256SUMS`.
+
+## Engineering source
+
+Every proof-system figure and every measured row of the paper was produced
+from the `engineering-source/` tree with the toolchains pinned in its
+`Cargo.lock` (arkworks 0.4, Winterfell 0.13.1, RISC Zero 3.0.6). The raw
+per-run logs live under `engineering-source/measurements/raw/` and verify
+against the manifest shipped there (52/52 files).
 
 ## Requirements
 

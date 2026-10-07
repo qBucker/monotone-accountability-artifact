@@ -1,0 +1,71 @@
+# Reproducibility targets for the RSEP-XMSS reference shell.
+#
+# All measurement runs execute inside the canonical 2 CPU / 4 GiB container
+# (matches the paper's sandbox environment). If your Docker requires sudo:
+#   make DOCKER="sudo docker" test
+#
+# Override the constraint knobs if you need a different environment:
+#   make CPUS=8 MEM=16g measure
+
+IMAGE  ?= vmc-repro
+DOCKER ?= docker
+CPUS   ?= 2
+MEM    ?= 4g
+H      ?= 10
+RUN     = $(DOCKER) run --rm --cpus=$(CPUS) --memory=$(MEM) -v "$(PWD)/out:/work/out" $(IMAGE)
+
+.PHONY: image test measure measure-all baseline per-event cusum cusum-dual wf-audit scaling scaling-stark slh-bench agent-trail reproduce-all clean
+
+image:
+	$(DOCKER) build -t $(IMAGE) .
+
+test: image
+	$(RUN) cargo test --release
+
+measure: image
+	mkdir -p out
+	$(RUN) cargo run --release --example measure -- $(H) 5
+
+measure-all: image
+	mkdir -p out
+	$(RUN) sh -c 'for h in 10 12 16; do cargo run --release --example measure -- $$h 5 | tee out/measure-v4-h$$h.log; done'
+
+baseline: image
+	mkdir -p out
+	$(RUN) cargo run --release --example baseline -- $(H) 5
+
+per-event: image
+	mkdir -p out
+	$(RUN) sh -c 'python3 statistics/per_event_bench.py > out/per-event-bench.txt'
+
+cusum: image
+	mkdir -p out
+	$(RUN) sh -c 'python3 statistics/cusum_mc.py > out/cusum-output.txt && python3 statistics/verify.py out/cusum-output.txt statistics/expected_output.txt'
+
+cusum-dual: image
+	mkdir -p out
+	$(RUN) sh -c 'python3 statistics/cusum_dual_mc.py > out/cusum-dual-output.txt'
+
+wf-audit: image
+	$(RUN) sh -c 'cd rsep-pq-shell/wf-audit && cargo run --release'
+
+scaling: image
+	mkdir -p out
+	$(RUN) bash scripts/scaling_sweep.sh groth16
+
+scaling-stark: image
+	mkdir -p out
+	$(RUN) bash scripts/scaling_sweep.sh stark
+
+slh-bench: image
+	mkdir -p out
+	$(RUN) bash scripts/slh_bench.sh
+
+agent-trail: image
+	mkdir -p out
+	$(RUN) bash scripts/agent_trail.sh
+
+reproduce-all: test cusum measure-all wf-audit
+
+clean:
+	rm -rf out
