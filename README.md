@@ -1,4 +1,4 @@
-# Reproduction artifact — CUSUM trigger Monte Carlo
+# Reproduction artifact — CUSUM Monte Carlo + full engineering source
 
 Self-contained package that regenerates, with a single command, every cell
 of the CUSUM Monte Carlo tables of the accompanying submission (the
